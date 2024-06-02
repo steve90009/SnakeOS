@@ -3,7 +3,7 @@
 start:
     mov ax, 0
     int 0x10                    ; clear screen and set video mode to 40x25
-    mov word [snake], 0x0c14    ; middle, 14 = 20y, 0c = 12x
+    mov word [snake], 0x0c14    ; middle, 14 = 20x, 0c = 12y
     mov word [len], 2           ; len is twice the amount of snake members; because len is actualy the amount of bytes and each member uses 2
     mov word [apple], 0x050f
     mov byte [lost], 0
@@ -14,9 +14,28 @@ input:
 
     mov ah, 0x10
     int 0x16        ; get input
+
+
     cmp al, 'r'     ; check if restart
     je start
-    mov [dir], al   ; move char to dir
+
+    .notC:
+    cmp al, 's'
+    jne .notS
+    mov word [dir], 0x0100
+    .notS:
+    cmp al, 'w'
+    jne .notW
+    mov word [dir], 0xff00  ; two's complement of 0x0100
+    .notW:
+    cmp al, 'd'
+    jne .notD
+    mov word [dir], 0x0001
+    .notD:
+    cmp al, 'a'
+    jne .notA
+    mov word [dir], 0xffff
+    .notA:
     .wait:
         mov ah, 0x86    ; wait
         mov cx, 0x01    ; time to wait
@@ -37,39 +56,29 @@ copy:
         mov ax, word [snake + bx - 2]   ; copy down
         mov word [snake + bx], ax       ; copy down
         jmp .loop                       ; repeat
-move:                       ; check key and move head
-    cmp byte [dir], 'w'
-    jne notW
-    dec byte [snake+1]
+move:
+    mov ax, [dir]
+    add word [snake], ax    ; move head
 
-    cmp byte [snake+1], 255 ; check if out of bounds
-    jne notW
-    mov byte [snake+1], 24
-    notW:
-    cmp byte [dir], 'a'
-    jne notA
-    dec byte [snake]
+    cmp byte [snake], 255   ; check if out of bounds
+    jne .inHN
+    add word [snake], 40    ; add 40 to also increase y by one as it decrease because of the addition
 
-    cmp byte [snake], 255
-    jne notA
-    mov byte [snake], 39
-    notA:
-    cmp byte [dir], 's'
-    jne notS
-    inc byte [snake+1]
-    
-    cmp byte [snake+1], 25
-    jne notS
-    mov byte [snake+1], 0
-    notS:
-    cmp byte [dir], 'd'
-    jne notD
-    inc byte [snake]
-    
+    .inHN:                  ; in horizontal negative direction
     cmp byte [snake], 40
-    jne notD
+    jne .inHP
     mov byte [snake], 0
-    notD:
+
+    .inHP:
+    cmp byte [snake + 1], 255
+    jne .inVN
+    mov byte [snake + 1], 24
+
+    .inVN:
+    cmp byte [snake + 1], 25
+    jne collision
+    mov byte [snake + 1], 0
+
 collision:
     mov bx, 0
     mov ax, word [snake]
@@ -109,19 +118,19 @@ rand:
     div cl                  ; divide ax by 25 to get y
     mov [apple + 1], ah     ; move remainder to y
 clear:
-    mov ax, 0x0001      ; set video mode
-    int 0x10            ; clear screen
+    mov ax, 0x0000          ; set video mode
+    int 0x10                ; clear screen
 checklost:
-    cmp byte [lost], 1  ; check if lost
-    jne print           ; continue if not
-    mov ax, 0x1300      ; set mode
-    xor bh, bh          ; set page
-    mov bl, 0x07        ; set attribute
-    mov cx, strLen      ; set len
-    xor dx, dx          ; set position
-    mov es, dx          ; set es to zero
+    cmp byte [lost], 1      ; check if lost
+    jne print               ; continue if not
+    mov ax, 0x1300          ; set mode
+    xor bh, bh              ; set page
+    mov bl, 0x07            ; set attribute
+    mov cx, strLen          ; set len
+    xor dx, dx              ; set position
+    mov es, dx              ; set es to zero
     mov bp, gameOverString  ; set bp to str pointer
-    int 0x10            ; call print string
+    int 0x10                ; call print string
     jmp input
 
 print:
@@ -160,7 +169,7 @@ dw 0xaa55
 
                         ; not loaded, just for memory adresses
 dir:
-db 0
+dw 0
 len:
 dw 0
 apple:
