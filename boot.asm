@@ -109,8 +109,8 @@ rand:
     div cl                  ; divide ax by 25 to get y
     mov [apple + 1], ah     ; move remainder to y
 clear:
-    mov ax, 0
-    int 0x10    ; clear screen
+    mov ax, 0x0001      ; set video mode
+    int 0x10            ; clear screen
 checklost:
     cmp byte [lost], 1  ; check if lost
     jne print           ; continue if not
@@ -128,12 +128,13 @@ print:
     mov bh, 0                       ; set page number
     mov bp, 0                       ; set index
     mov cx, 1                       ; set amount of chars to write
+    mov bl, 0x02                    ; set color green
     .loop:
         mov ah, 0x2                 ; set interrupt mode to set cursor
         mov dx, word [snake + bp]   ; get position
         int 0x10                    ; set cursor
 
-        mov ax, 0x0adb              ; set interrupt mode to write cursor and set ascii char (0a for mode and db for char)
+        mov ax, 0x09db              ; set interrupt mode to write cursor and set ascii char (09 for mode and db for char)
         int 0x10                    ; write char
         
         add bp, 2                   ; increase index
@@ -144,7 +145,8 @@ print:
     mov dx, word [apple]            ; set position to apple
     int 0x10                        ; set cursor
 
-    mov ax, 0x0a40                  ; set char to @ and set mode to write cursor
+    mov ax, 0x0940                  ; set char to @ and set mode to write cursor
+    mov bl, 0x04                    ; set color to red
     int 0x10                        ; write
 
     jmp input
