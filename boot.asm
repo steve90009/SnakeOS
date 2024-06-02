@@ -22,23 +22,33 @@ input:
     .notC:
     cmp al, 's'
     jne .notS
+    cmp word [dir], 0xff00  ; check if moving in opposite direction
+    je .wait
     mov word [dir], 0x0100
+
     .notS:
     cmp al, 'w'
     jne .notW
+    cmp word [dir], 0x0100  ; check if moving in opposite direction
+    je .wait
     mov word [dir], 0xff00  ; two's complement of 0x0100
+
     .notW:
     cmp al, 'd'
     jne .notD
+    cmp word [dir], 0xffff  ; check if moving in opposite direction
+    je .wait
     mov word [dir], 0x0001
+
     .notD:
     cmp al, 'a'
-    jne .notA
+    jne .wait
+    cmp word [dir], 0x0001  ; check if moving in opposite direction
+    je .wait
     mov word [dir], 0xffff
-    .notA:
     .wait:
         mov ah, 0x86    ; wait
-        mov cx, 0x01    ; time to wait
+        mov cx, 0x00    ; time to wait
         mov dx, 0x7100  ; time to wait
         int 0x15        ; call wait
         jc input        ; get input again if not finished waiting
