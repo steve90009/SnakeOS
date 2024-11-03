@@ -8,11 +8,11 @@ start:
     mov word [apple], 0x050f
     mov byte [lost], 0
 input:
-    mov ah, 0x11
+    mov ah, 0x01
     int 0x16        ; check input
     jz .wait        ; continue if no input
 
-    mov ah, 0x10
+    mov ah, 0x00
     int 0x16        ; get input
 
 
@@ -48,8 +48,8 @@ input:
     mov word [dir], 0xffff
     .wait:
         mov ah, 0x86    ; wait
-        mov cx, 0x00    ; time to wait
-        mov dx, 0x7100  ; time to wait
+        mov cx, 0x01    ; time to wait
+        mov dx, 0x0000  ; time to wait
         int 0x15        ; call wait
         jc input        ; get input again if not finished waiting
 
