@@ -3,6 +3,9 @@
 start:
     mov ax, 0
     int 0x10                    ; clear screen and set video mode to 40x25
+    mov ah, 0x01
+    mov cx, 0x3200
+    int 0x10                    ; remove cursor
     mov word [snake], 0x0c14    ; middle, 14 = 20x, 0c = 12y
     mov word [len], 2           ; len is twice the amount of snake members; because len is actualy the amount of bytes and each member uses 2
     mov word [apple], 0x050f
@@ -128,8 +131,13 @@ rand:
     div cl                  ; divide ax by 25 to get y
     mov [apple + 1], ah     ; move remainder to y
 clear:
-    mov ax, 0x0000          ; set video mode
-    int 0x10                ; clear screen
+    mov ax, 0xB800          ; Video memory segment for text mode
+    mov es, ax              ; Load it into ES
+    xor di, di              ; Start at offset 0 (beginning of video memory)
+    mov cx, 2000            ; 80x25 text mode has 2000 character cells
+
+    mov ax, 0x0720          ; space char with color
+    rep stosw               ; Write space + attribute to each cell
 checklost:
     cmp byte [lost], 1      ; check if lost
     jne print               ; continue if not
@@ -185,5 +193,7 @@ dw 0
 apple:
 dw 0
 lost:
+db 0
+page:
 db 0
 snake:
